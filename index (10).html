@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Northside Family Medicine — Talk to Riley</title>
+<meta name="description" content="Try a live web call with Riley, the AI receptionist for Northside Family Medicine. Book, reschedule, or cancel an appointment by voice." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14322C;
+    --pine:#1E5C4F;
+    --pine-deep:#16463D;
+    --mist:#F3F6F4;
+    --sage:#DEE9E2;
+    --line:#C9D6CE;
+    --coral:#E4674E;
+    --white:#FFFFFF;
+    --muted:#5B6F68;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Instrument Sans',system-ui,sans-serif;
+    background:var(--mist);
+    color:var(--ink);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'Spline Sans Mono',monospace}
+
+  /* ---------- top bar ---------- */
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px clamp(20px,5vw,56px);
+    border-bottom:1px solid var(--line);
+    background:var(--mist);
+  }
+  .wordmark{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}
+  .wordmark .cross{
+    width:34px;height:34px;border-radius:10px;background:var(--pine);
+    display:grid;place-items:center;flex:none;
+  }
+  .wordmark .cross svg{display:block}
+  .wordmark strong{
+    font-family:'Bricolage Grotesque';font-weight:600;font-size:1.05rem;letter-spacing:-.01em;
+  }
+  .hours-pill{
+    font-family:'Spline Sans Mono',monospace;font-size:.72rem;letter-spacing:.08em;
+    color:var(--pine-deep);background:var(--sage);
+    padding:8px 14px;border-radius:999px;white-space:nowrap;
+  }
+  @media (max-width:560px){ .hours-pill{display:none} }
+
+  /* ---------- hero ---------- */
+  .hero{
+    max-width:860px;margin:0 auto;
+    padding:clamp(48px,8vh,88px) 20px 24px;
+    text-align:center;
+  }
+  .eyebrow{
+    font-family:'Spline Sans Mono',monospace;font-size:.72rem;letter-spacing:.22em;
+    color:var(--pine);text-transform:uppercase;
+    display:inline-flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before,.eyebrow::after{
+    content:"";width:26px;height:1px;background:var(--line);
+  }
+  h1{
+    font-family:'Bricolage Grotesque';font-weight:700;
+    font-size:clamp(2.1rem,5.4vw,3.6rem);
+    letter-spacing:-.025em;line-height:1.08;
+    margin:18px auto 16px;max-width:15ch;
+  }
+  h1 em{font-style:normal;color:var(--pine)}
+  .sub{
+    color:var(--muted);font-size:clamp(1rem,1.6vw,1.125rem);
+    max-width:52ch;margin:0 auto;
+  }
+
+  /* ---------- the reception orb ---------- */
+  .demo{
+    max-width:860px;margin:0 auto;padding:36px 20px 8px;
+    display:flex;flex-direction:column;align-items:center;gap:20px;
+  }
+  .orb-wrap{position:relative;width:230px;height:230px;display:grid;place-items:center}
+  .ring{
+    position:absolute;inset:0;border-radius:50%;
+    border:1.5px solid var(--pine);opacity:0;
+    transform:scale(.72);
+    transition:transform .12s ease-out,opacity .25s ease;
+    pointer-events:none;
+  }
+  .ring.r2{inset:-18px}
+  .ring.r3{inset:-38px}
+  .demo.live .ring{opacity:.35}
+  .demo.live .ring.r2{opacity:.22}
+  .demo.live .ring.r3{opacity:.12}
+  .orb{
+    width:176px;height:176px;border-radius:50%;
+    border:none;cursor:pointer;
+    background:var(--pine);color:var(--white);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    font-family:'Instrument Sans';font-weight:600;font-size:.95rem;
+    box-shadow:0 18px 40px -18px rgba(20,50,44,.55);
+    transition:transform .18s ease,background .25s ease,box-shadow .25s ease;
+  }
+  .orb:hover{transform:translateY(-2px);background:var(--pine-deep)}
+  .orb:focus-visible{outline:3px solid var(--coral);outline-offset:4px}
+  .orb svg{width:34px;height:34px}
+  .demo.idle .orb{animation:breathe 4.5s ease-in-out infinite}
+  @keyframes breathe{
+    0%,100%{box-shadow:0 18px 40px -18px rgba(20,50,44,.55)}
+    50%{box-shadow:0 18px 56px -12px rgba(30,92,79,.65)}
+  }
+  .demo.connecting .orb{background:var(--pine-deep);animation:none}
+  .demo.connecting .ring{opacity:.4;animation:spin 1.2s linear infinite}
+  .demo.connecting .ring.r2,.demo.connecting .ring.r3{display:none}
+  .demo.connecting .ring{border-style:dashed;transform:scale(1)}
+  @keyframes spin{to{transform:scale(1) rotate(360deg)}}
+  .demo.live .orb{background:var(--coral);animation:none}
+  .demo.live .orb:hover{background:#cf5a42}
+
+  .status-line{
+    font-family:'Spline Sans Mono',monospace;font-size:.78rem;letter-spacing:.1em;
+    color:var(--muted);text-transform:uppercase;
+    display:flex;align-items:center;gap:10px;min-height:22px;
+  }
+  .live-dot{
+    width:8px;height:8px;border-radius:50%;background:var(--coral);
+    display:none;animation:blink 1.4s ease-in-out infinite;
+  }
+  .demo.live .live-dot{display:block}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .hangup{
+    display:none;
+    font-family:'Instrument Sans';font-weight:600;font-size:.9rem;
+    color:var(--ink);background:transparent;
+    border:1.5px solid var(--line);border-radius:999px;
+    padding:10px 22px;cursor:pointer;
+    transition:border-color .2s,color .2s;
+  }
+  .hangup:hover{border-color:var(--coral);color:var(--coral)}
+  .demo.live .hangup,.demo.connecting .hangup{display:inline-block}
+
+  .err{
+    display:none;max-width:52ch;text-align:center;
+    font-size:.9rem;color:#9C3B27;background:#FBEAE5;
+    border:1px solid #F0C9BE;border-radius:12px;padding:12px 18px;
+  }
+  .err.show{display:block}
+
+  /* ---------- transcript ---------- */
+  .transcript{
+    display:none;width:min(640px,100%);
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 22px;max-height:280px;overflow-y:auto;text-align:left;
+  }
+  .transcript.show{display:block}
+  .transcript h3{
+    font-family:'Spline Sans Mono',monospace;font-size:.7rem;letter-spacing:.18em;
+    color:var(--muted);text-transform:uppercase;font-weight:500;margin-bottom:12px;
+  }
+  .t-row{margin-bottom:10px;font-size:.95rem}
+  .t-row .who{
+    font-family:'Spline Sans Mono',monospace;font-size:.68rem;letter-spacing:.12em;
+    text-transform:uppercase;display:block;margin-bottom:2px;
+  }
+  .t-row.riley .who{color:var(--pine)}
+  .t-row.you .who{color:var(--coral)}
+
+  /* ---------- try saying ---------- */
+  .try{
+    max-width:1020px;margin:0 auto;padding:56px 20px 8px;
+  }
+  .try h2, .about h2{
+    font-family:'Bricolage Grotesque';font-weight:600;font-size:1.5rem;
+    letter-spacing:-.015em;margin-bottom:6px;
+  }
+  .try p.lead{color:var(--muted);margin-bottom:26px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media (max-width:760px){.cards{grid-template-columns:1fr}}
+  .card{
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px 22px 24px;
+  }
+  .card .tag{
+    font-family:'Spline Sans Mono',monospace;font-size:.68rem;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--pine);display:block;margin-bottom:10px;
+  }
+  .card q{
+    font-family:'Bricolage Grotesque';font-weight:500;font-size:1.08rem;
+    letter-spacing:-.01em;line-height:1.35;quotes:"\201C" "\201D";
+  }
+  .card .note{display:block;margin-top:10px;font-size:.85rem;color:var(--muted)}
+
+  /* ---------- practice info ---------- */
+  .about{max-width:1020px;margin:0 auto;padding:56px 20px 64px}
+  .about-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+    background:var(--sage);border-radius:var(--radius);overflow:hidden;
+    margin-top:22px;
+  }
+  @media (max-width:760px){.about-grid{grid-template-columns:1fr}}
+  .about-cell{padding:26px 26px 28px;border-right:1px solid rgba(20,50,44,.12)}
+  .about-cell:last-child{border-right:none}
+  @media (max-width:760px){
+    .about-cell{border-right:none;border-bottom:1px solid rgba(20,50,44,.12)}
+    .about-cell:last-child{border-bottom:none}
+  }
+  .about-cell .k{
+    font-family:'Spline Sans Mono',monospace;font-size:.68rem;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--pine-deep);display:block;margin-bottom:8px;
+  }
+  .about-cell .v{font-size:.98rem}
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:26px 20px 40px;text-align:center;
+    color:var(--muted);font-size:.85rem;
+  }
+  footer .mono{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;display:block;margin-top:8px}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="wordmark" href="#">
+    <span class="cross" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M6 1h4v5h5v4h-5v5H6v-5H1V6h5V1z" fill="#F3F6F4"/>
+      </svg>
+    </span>
+    <strong>Northside Family Medicine</strong>
+  </a>
+  <span class="hours-pill">MON–FRI · 9AM–5PM PT</span>
+</header>
+
+<section class="hero">
+  <span class="eyebrow">AI reception · live web demo</span>
+  <h1>Talk to <em>Riley</em>, our phone receptionist.</h1>
+  <p class="sub">Riley answers our line, books visits, moves them, and cancels them — by voice, around the clock. Tap the button and try a real call right from your browser.</p>
+</section>
+
+<section class="demo idle" id="demo">
+  <div class="orb-wrap">
+    <span class="ring" id="ring1"></span>
+    <span class="ring r2" id="ring2"></span>
+    <span class="ring r3" id="ring3"></span>
+    <button class="orb" id="callBtn" aria-label="Start a voice call with Riley">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v1a7 7 0 0 1-14 0v-1"/>
+        <line x1="12" y1="18" x2="12" y2="22"/>
+      </svg>
+      <span id="orbLabel">Tap to talk</span>
+    </button>
+  </div>
+
+  <div class="status-line"><span class="live-dot"></span><span id="statusText">Microphone required · nothing is saved</span></div>
+
+  <button class="hangup" id="endBtn">End call</button>
+  <div class="err" id="errBox" role="alert"></div>
+
+  <div class="transcript" id="transcript">
+    <h3>Live transcript</h3>
+    <div id="tBody"></div>
+  </div>
+</section>
+
+<section class="try">
+  <h2>Not sure what to say?</h2>
+  <p class="lead">Riley handles the front desk end to end. Start with any of these.</p>
+  <div class="cards">
+    <div class="card">
+      <span class="tag">Book</span>
+      <q>Hi, I'd like to book an appointment — do you have anything tomorrow afternoon?</q>
+      <span class="note">Riley checks the live calendar, offers open times, and emails you a confirmation.</span>
+    </div>
+    <div class="card">
+      <span class="tag">Reschedule</span>
+      <q>I need to move my appointment to later in the week.</q>
+      <span class="note">Riley finds your booking by phone number and moves it to a new open slot.</span>
+    </div>
+    <div class="card">
+      <span class="tag">Cancel</span>
+      <q>Something came up — I have to cancel my visit.</q>
+      <span class="note">Riley confirms which appointment, cancels it, and sends written confirmation.</span>
+    </div>
+  </div>
+</section>
+
+<section class="about">
+  <h2>About the practice</h2>
+  <div class="about-grid">
+    <div class="about-cell">
+      <span class="k">Hours</span>
+      <span class="v">Monday to Friday<br>9:00 AM – 5:00 PM Pacific</span>
+    </div>
+    <div class="about-cell">
+      <span class="k">Location</span>
+      <span class="v">1420 Wilshire Boulevard<br>Los Angeles, California</span>
+    </div>
+    <div class="about-cell">
+      <span class="k">Services</span>
+      <span class="v">Consultations, annual physicals, follow-ups, vaccinations, screenings</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Northside Family Medicine is a fictional practice used to demonstrate an AI voice receptionist.
+  <span class="mono">Riley cannot give medical advice · In an emergency, call 911</span>
+</footer>
+
+<script type="module">
+  import Vapi from 'https://esm.sh/@vapi-ai/web@2.2.4';
+
+  /* ============================================================
+     CONFIG — fill these two in.
+     PUBLIC key only (Vapi dashboard → Settings → API Keys →
+     "Public"). NEVER put the private key in this file.
+     ============================================================ */
+  const VAPI_PUBLIC_KEY = '80c62787-51ce-44af-8c63-62077c249964';
+  const ASSISTANT_ID    = '2e591e71-e5a7-4f93-9541-b7ea7413016b';
+
+  const demo      = document.getElementById('demo');
+  const callBtn   = document.getElementById('callBtn');
+  const endBtn    = document.getElementById('endBtn');
+  const orbLabel  = document.getElementById('orbLabel');
+  const statusEl  = document.getElementById('statusText');
+  const errBox    = document.getElementById('errBox');
+  const tPanel    = document.getElementById('transcript');
+  const tBody     = document.getElementById('tBody');
+  const rings     = [document.getElementById('ring1'), document.getElementById('ring2'), document.getElementById('ring3')];
+
+  let vapi = null;
+  let inCall = false;
+  let connecting = false;
+  let timerId = null;
+  let seconds = 0;
+  let speaking = false;
+
+  function setState(name){
+    demo.classList.remove('idle','connecting','live');
+    demo.classList.add(name);
+  }
+  function fmt(s){
+    const m = String(Math.floor(s/60)).padStart(2,'0');
+    const r = String(s%60).padStart(2,'0');
+    return m + ':' + r;
+  }
+  function startTimer(){
+    seconds = 0;
+    timerId = setInterval(() => {
+      seconds++;
+      statusEl.textContent = (speaking ? 'Riley speaking' : 'Listening') + ' · ' + fmt(seconds);
+    }, 1000);
+  }
+  function stopTimer(){ clearInterval(timerId); timerId = null; }
+  function showError(msg){
+    errBox.textContent = msg;
+    errBox.classList.add('show');
+  }
+  function clearError(){ errBox.classList.remove('show'); }
+
+  function resetToIdle(endedMsg){
+    inCall = false; connecting = false; speaking = false;
+    stopTimer();
+    setState('idle');
+    orbLabel.textContent = 'Tap to talk';
+    statusEl.textContent = endedMsg || 'Microphone required · nothing is saved';
+    rings.forEach(r => r.style.transform = 'scale(.72)');
+  }
+
+  function addTranscript(role, text){
+    if (!text) return;
+    const row = document.createElement('div');
+    row.className = 't-row ' + (role === 'assistant' ? 'riley' : 'you');
+    const who = document.createElement('span');
+    who.className = 'who';
+    who.textContent = role === 'assistant' ? 'Riley' : 'You';
+    const body = document.createElement('span');
+    body.textContent = text;
+    row.appendChild(who); row.appendChild(body);
+    tBody.appendChild(row);
+    tPanel.scrollTop = tPanel.scrollHeight;
+  }
+
+  function getVapi(){
+    if (vapi) return vapi;
+    vapi = new Vapi(VAPI_PUBLIC_KEY);
+
+    vapi.on('call-start', () => {
+      connecting = false; inCall = true;
+      setState('live');
+      orbLabel.textContent = 'On call';
+      tPanel.classList.add('show');
+      startTimer();
+      statusEl.textContent = 'Connected · 00:00';
+    });
+
+    vapi.on('call-end', () => {
+      resetToIdle('Call ended · tap to call again');
+    });
+
+    vapi.on('speech-start', () => { speaking = true; });
+    vapi.on('speech-end',   () => { speaking = false; });
+
+    vapi.on('volume-level', (v) => {
+      if (!inCall) return;
+      const level = Math.min(Math.max(v || 0, 0), 1);
+      rings[0].style.transform = 'scale(' + (0.78 + level * 0.30) + ')';
+      rings[1].style.transform = 'scale(' + (0.82 + level * 0.24) + ')';
+      rings[2].style.transform = 'scale(' + (0.86 + level * 0.18) + ')';
+    });
+
+    vapi.on('message', (m) => {
+      if (m && m.type === 'transcript' && m.transcriptType === 'final') {
+        addTranscript(m.role, m.transcript);
+      }
+    });
+
+    vapi.on('error', (e) => {
+      console.error('Vapi error:', e);
+      resetToIdle();
+      showError('The call could not connect. Check your microphone permission and try again in a moment.');
+    });
+
+    return vapi;
+  }
+
+  async function startCall(){
+    clearError();
+    if (VAPI_PUBLIC_KEY.startsWith('YOUR_')) {
+      showError('Demo not configured yet: the Vapi public key has not been added to this page.');
+      return;
+    }
+    connecting = true;
+    setState('connecting');
+    orbLabel.textContent = 'Connecting…';
+    statusEl.textContent = 'Requesting microphone…';
+    tBody.innerHTML = '';
+    try {
+      await getVapi().start(ASSISTANT_ID);
+    } catch (e) {
+      console.error(e);
+      resetToIdle();
+      showError('Could not start the call. Allow microphone access and try again.');
+    }
+  }
+
+  function endCall(){
+    if (vapi && (inCall || connecting)) vapi.stop();
+    resetToIdle('Call ended · tap to call again');
+  }
+
+  callBtn.addEventListener('click', () => {
+    if (inCall || connecting) { endCall(); } else { startCall(); }
+  });
+  endBtn.addEventListener('click', endCall);
+</script>
+</body>
+</html>
